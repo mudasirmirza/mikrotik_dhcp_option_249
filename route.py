@@ -65,30 +65,42 @@ def index():
 def ip2hex(cidr, router):
     addr, mask = cidr.split("/")
     mask = int(mask)
-    addr = [("%2s" % hex(int(i))[2:]).replace(" ", "0") for i in addr.split(".") if i != "0"]
-    parts = mask/8 - len(addr)
-    if mask%8 > 0:
-        parts += 1
-    if parts > 0:
-        for i in range(int(parts)):
-            addr.append("00")
+    addr_list = addr.split(".")
+    hex_string = "%2s" % hex(int(mask))[2:].zfill(2)
+    if mask > 0:
+        hex_string += "%2s" % hex(int(addr_list[0]))[2:].zfill(2)
+    if mask > 8:
+        hex_string += "%2s" % hex(int(addr_list[1]))[2:].zfill(2)
+    if mask > 16:
+        hex_string += "%2s" % hex(int(addr_list[2]))[2:].zfill(2)
+    if mask > 24:
+        hex_string += "%2s" % hex(int(addr_list[3]))[2:].zfill(2)
 
-    r = []
-    for i in router.split("."):
-        r.append(("%2s" % hex(int(i))[2:]).replace(" ", "0"))
+    gw_split = router.split(".")
+    hex_gw = "%2s%2s%2s%2s" % (
+        hex(int(gw_split[0]))[2:].zfill(2),
+        hex(int(gw_split[1]))[2:].zfill(2),
+        hex(int(gw_split[2]))[2:].zfill(2),
+        hex(int(gw_split[3]))[2:].zfill(2),
+    )
 
-    addr.insert(0, hex(mask)[2:])
-    return "".join(addr), "".join(r)
+    return "".join([hex_string, hex_gw])
 
 
 def routes2hex(routes):
     routers = []
     for cidr, router in routes.items():
-        a,r = ip2hex(cidr, router)
+        a = ip2hex(cidr, router)
         routers.append(a)
-        routers.append(r)
 
-    return "0x%s" % ("".join(routers).upper())
+    return "0x%s" % ("".join(routers).lower())
 
-#application = default_app()
-run(host='127.0.0.1', port=8090, debug=True, reloader=True)
+
+# Example
+# print routes2hex({
+#     "10.0.0.0/8": "10.6.34.1",
+#     "172.17.1.0/24": "10.6.34.1"
+# })
+
+application = default_app()
+# run(host='127.0.0.1', port=8090, debug=True, reloader=True)
